@@ -66,6 +66,39 @@ export async function conversationRoutes(app: FastifyInstance) {
       data: { lastMessageAt: new Date() },
     })
 
+    // ส่งข้อความกลับไปยัง channel ต้นทาง
+    const channelType = conversation.channel.type
+    const accessToken = conversation.channel.accessToken
+
+    if (channelType === 'LINE' && accessToken) {
+      const profile = conversation.customer.channelProfiles.find(p => p.type === 'LINE')
+      if (profile) {
+        await fetch('https://api.line.me/v2/bot/message/push', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({
+            to: profile.externalId,
+            messages: [{ type: 'text', text: translatedContent }],
+          }),
+        })
+      }
+    } else if (channelType === 'FACEBOOK' && accessToken) {
+      const profile = conversation.customer.channelProfiles.find(p => p.type === 'FACEBOOK')
+      if (profile) {
+        await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipient: { id: profile.externalId },
+            message: { text: translatedContent },
+          }),
+        })
+      }
+    }
+
     await redis.publish(`org:${orgId}`, JSON.stringify({ type: 'NEW_MESSAGE', conversationId: id, message }))
 
     return reply.send({ message, translatedContent })
