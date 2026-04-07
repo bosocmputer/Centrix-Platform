@@ -9,6 +9,10 @@ COPY packages/types/package.json ./packages/types/
 RUN pnpm install --no-frozen-lockfile
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL=http://localhost:5000
+ARG NEXT_PUBLIC_WS_URL=ws://localhost:5000
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_WS_URL=$NEXT_PUBLIC_WS_URL
 RUN cd apps/web && pnpm build
 
 FROM node:22-alpine AS runner
