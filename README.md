@@ -66,4 +66,5 @@ Default ports: Web `:3002` · API `:5001` · Postgres `:5434` · Redis `:6380`
 
 ## Docs
 
+- [Development Status](docs/status.md) — สถานะ features ปัจจุบัน
 - [Platform Plan](docs/centrix-platform-plan.md) — roadmap, competitive analysis, pricing strategy

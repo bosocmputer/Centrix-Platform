@@ -123,4 +123,26 @@ export async function conversationRoutes(app: FastifyInstance) {
 
     return reply.send({ conversation })
   })
+
+  // GET /api/media/line/:messageId — proxy รูป/ไฟล์จาก LINE ให้ browser เปิดได้
+  app.get('/api/media/line/:messageId', { onRequest: [app.authenticate] }, async (req, reply) => {
+    const { messageId } = req.params as { messageId: string }
+    const { orgId } = req.user as { userId: string; orgId: string }
+
+    const channel = await prisma.channel.findFirst({
+      where: { orgId, type: 'LINE', isActive: true },
+    })
+    if (!channel?.accessToken) return reply.status(404).send({ error: 'Channel not found' })
+
+    const lineRes = await fetch(`https://api-data.line.me/v2/bot/message/${messageId}/content`, {
+      headers: { Authorization: `Bearer ${channel.accessToken}` },
+    })
+    if (!lineRes.ok) return reply.status(502).send({ error: 'Failed to fetch from LINE' })
+
+    const contentType = lineRes.headers.get('content-type') ?? 'application/octet-stream'
+    const buffer = Buffer.from(await lineRes.arrayBuffer())
+    reply.header('Content-Type', contentType)
+    reply.header('Cache-Control', 'private, max-age=3600')
+    return reply.send(buffer)
+  })
 }

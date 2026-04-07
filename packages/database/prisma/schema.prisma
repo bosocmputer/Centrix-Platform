@@ -152,7 +152,9 @@ model Message {
   id                 String      @id @default(cuid())
   conversationId     String
   role               MessageRole
+  messageType        String      @default("text") // text, image, video, audio, file, sticker
   content            String
+  mediaUrl           String?     // LINE messageId หรือ URL สำหรับ media
   originalContent    String?     // ข้อความต้นฉบับก่อนแปล
   originalLanguage   String?     // ภาษาต้นทาง เช่น "ja", "zh"
   translatedContent  String?     // คำแปลที่ Agent เห็น

@@ -27,11 +27,13 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
     const { events } = req.body as any
 
     for (const event of events ?? []) {
-      if (event.type !== 'message' || event.message.type !== 'text') continue
+      if (event.type !== 'message') continue
+
+      const msgType: string = event.message.type
+      // รองรับเฉพาะ type ที่ใช้งานได้
+      if (!['text', 'image', 'video', 'audio', 'file', 'sticker'].includes(msgType)) continue
 
       const externalId = event.source.userId
-      const text = event.message.text
-
       if (!channel) continue
 
       let customerChannel = await prisma.customerChannel.findUnique({
@@ -68,17 +70,20 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
         })
       }
 
-      const detectedLang = await detectLanguage(text)
-      const translatedText = detectedLang !== 'th' ? await translateText(text, 'th') : text
+      const text = msgType === 'text' ? event.message.text as string : ''
+      const detectedLang = msgType === 'text' ? await detectLanguage(text) : 'unknown'
+      const translatedText = (msgType === 'text' && detectedLang !== 'th') ? await translateText(text, 'th') : text
 
       const message = await prisma.message.create({
         data: {
           conversationId: conversation.id,
           role: 'CUSTOMER',
-          content: text,
-          originalContent: text,
-          originalLanguage: detectedLang,
-          translatedContent: translatedText,
+          messageType: msgType,
+          content: msgType === 'text' ? text : `[${msgType}]`,
+          mediaUrl: msgType !== 'text' ? event.message.id : undefined,
+          originalContent: msgType === 'text' ? text : undefined,
+          originalLanguage: msgType === 'text' ? detectedLang : undefined,
+          translatedContent: msgType === 'text' ? translatedText : undefined,
         },
       })
 
