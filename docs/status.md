@@ -51,7 +51,8 @@
 | Reply ส่งกลับ Facebook | ✅ Done (code) | รอทดสอบ |
 | รับข้อความ text | ✅ Done | |
 | รับรูปภาพ / ไฟล์ / วิดีโอ / audio / sticker | ✅ Done | เก็บ LINE messageId ใน mediaUrl |
-| Media proxy (ดูรูปจาก LINE ใน browser) | ✅ Done | GET /api/media/line/:messageId |
+| Media proxy (ดูรูปจาก LINE ใน browser) | ✅ Done | GET /api/media/line/:messageId?token= |
+| แสดงรูป/วิดีโอ/audio/ไฟล์ใน inbox UI | ✅ Done | MessageMedia component |
 | Translation (ข้อความขาเข้า) | ✅ Done | Google Translate |
 | Translation (ข้อความส่งออก) | ✅ Done | แปลเป็นภาษาลูกค้าก่อนส่ง |
 | Assign conversation ให้ Agent | ✅ Done | PATCH /api/conversations/:id |
@@ -72,7 +73,6 @@
 ## Planned (ยังไม่ได้ทำ)
 
 - [ ] Named Cloudflare Tunnel (URL ถาวร)
-- [ ] แสดงรูป/ไฟล์ใน inbox UI (ใช้ media proxy)
 - [ ] Canned Replies
 - [ ] AI Mode (auto-reply)
 - [ ] Mobile App (iOS/Android)

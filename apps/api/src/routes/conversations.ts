@@ -125,9 +125,19 @@ export async function conversationRoutes(app: FastifyInstance) {
   })
 
   // GET /api/media/line/:messageId — proxy รูป/ไฟล์จาก LINE ให้ browser เปิดได้
-  app.get('/api/media/line/:messageId', { onRequest: [app.authenticate] }, async (req, reply) => {
+  app.get('/api/media/line/:messageId', async (req, reply) => {
     const { messageId } = req.params as { messageId: string }
-    const { orgId } = req.user as { userId: string; orgId: string }
+
+    // รับ token จาก header หรือ query string (สำหรับ <img src>)
+    let orgId: string | null = null
+    try {
+      const token = (req.headers.authorization?.replace('Bearer ', '') ?? (req.query as any).token) as string
+      const decoded = app.jwt.verify(token) as any
+      orgId = decoded?.orgId ?? null
+    } catch {
+      return reply.status(401).send({ error: 'Unauthorized' })
+    }
+    if (!orgId) return reply.status(401).send({ error: 'Unauthorized' })
 
     const channel = await prisma.channel.findFirst({
       where: { orgId, type: 'LINE', isActive: true },

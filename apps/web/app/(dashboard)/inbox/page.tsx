@@ -74,30 +74,91 @@ function ConversationCard({ conv, active, onClick }: { conv: any; active: boolea
   )
 }
 
+function MessageMedia({ msg }: { msg: Message }) {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : ''
+  const type = (msg as any).messageType ?? 'text'
+  const mediaId = (msg as any).mediaUrl
+
+  if (type === 'image' && mediaId) {
+    return (
+      <a href={`${apiUrl}/api/media/line/${mediaId}?token=${token}`} target="_blank" rel="noopener noreferrer">
+        <img
+          src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
+          alt="image"
+          className="max-w-[240px] rounded-xl border border-white/10 cursor-pointer hover:opacity-90 transition"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+        />
+      </a>
+    )
+  }
+  if (type === 'video' && mediaId) {
+    return (
+      <video
+        src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
+        controls
+        className="max-w-[240px] rounded-xl border border-white/10"
+      />
+    )
+  }
+  if (type === 'audio' && mediaId) {
+    return (
+      <audio
+        src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
+        controls
+        className="w-[200px]"
+      />
+    )
+  }
+  if ((type === 'file') && mediaId) {
+    return (
+      <a
+        href={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex items-center gap-2 text-indigo-400 underline text-sm"
+      >
+        📎 ดาวน์โหลดไฟล์
+      </a>
+    )
+  }
+  if (type === 'sticker') {
+    return <p className="text-2xl">🖼️ <span className="text-xs text-gray-500">Sticker</span></p>
+  }
+  return null
+}
+
 function MessageBubble({ msg }: { msg: Message }) {
   const isCustomer = msg.role === 'CUSTOMER'
   const isNote = msg.role === 'AI'
+  const type = (msg as any).messageType ?? 'text'
+  const isMedia = type !== 'text'
+
   return (
     <div className={`flex gap-2 ${isCustomer ? 'justify-start' : 'justify-end'}`}>
       {isCustomer && (
         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0 mt-1">C</div>
       )}
       <div className={`max-w-[70%] ${isCustomer ? '' : 'items-end flex flex-col'}`}>
-        <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-          isCustomer ? 'bg-white/8 border border-white/10 text-gray-200 rounded-tl-sm'
-          : isNote ? 'bg-amber-500/10 border border-amber-500/20 text-amber-200 rounded-tr-sm'
-          : 'bg-indigo-600 text-white rounded-tr-sm shadow-lg shadow-indigo-600/20'
-        }`}>
-          {isNote && (
-            <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 mb-1 uppercase tracking-wide">
-              <Lock size={10} /> Private Note
-            </span>
-          )}
-          <p>{msg.content}</p>
-          {msg.translatedContent && isCustomer && (
-            <p className="text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-white/5 italic">{msg.translatedContent}</p>
-          )}
-        </div>
+        {isMedia ? (
+          <MessageMedia msg={msg} />
+        ) : (
+          <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+            isCustomer ? 'bg-white/8 border border-white/10 text-gray-200 rounded-tl-sm'
+            : isNote ? 'bg-amber-500/10 border border-amber-500/20 text-amber-200 rounded-tr-sm'
+            : 'bg-indigo-600 text-white rounded-tr-sm shadow-lg shadow-indigo-600/20'
+          }`}>
+            {isNote && (
+              <span className="flex items-center gap-1 text-[10px] font-semibold text-amber-400 mb-1 uppercase tracking-wide">
+                <Lock size={10} /> Private Note
+              </span>
+            )}
+            <p>{msg.content}</p>
+            {msg.translatedContent && isCustomer && (
+              <p className="text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-white/5 italic">{msg.translatedContent}</p>
+            )}
+          </div>
+        )}
         <span className="text-[10px] text-gray-600 mt-1 px-1">
           {new Date(msg.createdAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
         </span>
