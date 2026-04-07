@@ -1,0 +1,177 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum ChannelType {
+  FACEBOOK
+  INSTAGRAM
+  LINE
+  WECHAT
+  LAZADA
+  TIKTOK
+  SHOPEE
+}
+
+enum ConversationStatus {
+  OPEN
+  PENDING
+  RESOLVED
+}
+
+enum MessageRole {
+  CUSTOMER
+  AGENT
+  AI
+}
+
+enum AgentMode {
+  MANUAL
+  AI
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SUPERVISOR
+  AGENT
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  channels      Channel[]
+  customers     Customer[]
+  conversations Conversation[]
+  cannedReplies CannedReply[]
+
+  @@map("organizations")
+}
+
+model User {
+  id       String   @id @default(cuid())
+  orgId    String
+  email    String
+  name     String
+  role     UserRole @default(AGENT)
+  language String   @default("th")
+  mode     AgentMode @default(MANUAL)
+  password String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org           Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  conversations Conversation[] @relation("AssignedTo")
+
+  @@unique([orgId, email])
+  @@map("users")
+}
+
+model Channel {
+  id          String      @id @default(cuid())
+  orgId       String
+  type        ChannelType
+  name        String
+  accessToken String?
+  secret      String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  org           Organization   @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  conversations Conversation[]
+
+  @@map("channels")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  orgId     String
+  name      String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org              Organization      @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  channelProfiles  CustomerChannel[]
+  conversations    Conversation[]
+
+  @@map("customers")
+}
+
+// เชื่อม Customer กับแต่ละ channel (Unified Identity)
+model CustomerChannel {
+  id         String      @id @default(cuid())
+  customerId String
+  type       ChannelType
+  externalId String      // id จาก Facebook/LINE/etc.
+  name       String?
+  avatarUrl  String?
+  createdAt  DateTime    @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@unique([type, externalId])
+  @@map("customer_channels")
+}
+
+model Conversation {
+  id            String             @id @default(cuid())
+  orgId         String
+  channelId     String
+  customerId    String
+  status        ConversationStatus @default(OPEN)
+  assignedToId  String?
+  tags          String[]
+  lastMessageAt DateTime           @default(now())
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  org        Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  channel    Channel      @relation(fields: [channelId], references: [id])
+  customer   Customer     @relation(fields: [customerId], references: [id])
+  assignedTo User?        @relation("AssignedTo", fields: [assignedToId], references: [id])
+  messages   Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id                 String      @id @default(cuid())
+  conversationId     String
+  role               MessageRole
+  content            String
+  originalContent    String?     // ข้อความต้นฉบับก่อนแปล
+  originalLanguage   String?     // ภาษาต้นทาง เช่น "ja", "zh"
+  translatedContent  String?     // คำแปลที่ Agent เห็น
+  createdAt          DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model CannedReply {
+  id        String   @id @default(cuid())
+  orgId     String
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  org Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("canned_replies")
+}

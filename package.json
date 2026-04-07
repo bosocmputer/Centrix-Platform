@@ -1,0 +1,21 @@
+{
+  "name": "centrix",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "pnpm --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev": "concurrently \"pnpm dev:api\" \"pnpm dev:web\"",
+    "build": "pnpm --filter api build && pnpm --filter web build",
+    "db:generate": "pnpm --filter database generate",
+    "db:migrate": "pnpm --filter database migrate",
+    "db:studio": "pnpm --filter database studio"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
+  }
+}
