@@ -67,7 +67,9 @@ export interface Message {
   id: string
   conversationId: string
   role: MessageRole
+  messageType: string
   content: string
+  mediaUrl?: string
   originalContent?: string
   originalLanguage?: string
   translatedContent?: string

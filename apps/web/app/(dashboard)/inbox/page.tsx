@@ -76,15 +76,19 @@ function ConversationCard({ conv, active, onClick }: { conv: any; active: boolea
 
 function MessageMedia({ msg }: { msg: Message }) {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : ''
-  const type = (msg as any).messageType ?? 'text'
-  const mediaId = (msg as any).mediaUrl
+  const [token, setToken] = useState<string | null>(null)
+  useEffect(() => { setToken(localStorage.getItem('token')) }, [])
+  const type = msg.messageType ?? 'text'
+  const mediaId = msg.mediaUrl
 
-  if (type === 'image' && mediaId) {
+  if (!token || !mediaId) return null
+  const src = `${apiUrl}/api/media/line/${mediaId}?token=${token}`
+
+  if (type === 'image') {
     return (
-      <a href={`${apiUrl}/api/media/line/${mediaId}?token=${token}`} target="_blank" rel="noopener noreferrer">
+      <a href={src} target="_blank" rel="noopener noreferrer">
         <img
-          src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
+          src={src}
           alt="image"
           className="max-w-[240px] rounded-xl border border-white/10 cursor-pointer hover:opacity-90 transition"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
@@ -92,32 +96,17 @@ function MessageMedia({ msg }: { msg: Message }) {
       </a>
     )
   }
-  if (type === 'video' && mediaId) {
+  if (type === 'video') {
     return (
-      <video
-        src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
-        controls
-        className="max-w-[240px] rounded-xl border border-white/10"
-      />
+      <video src={src} controls className="max-w-[240px] rounded-xl border border-white/10" />
     )
   }
-  if (type === 'audio' && mediaId) {
-    return (
-      <audio
-        src={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
-        controls
-        className="w-[200px]"
-      />
-    )
+  if (type === 'audio') {
+    return <audio src={src} controls className="w-[200px]" />
   }
-  if ((type === 'file') && mediaId) {
+  if (type === 'file') {
     return (
-      <a
-        href={`${apiUrl}/api/media/line/${mediaId}?token=${token}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-2 text-indigo-400 underline text-sm"
-      >
+      <a href={src} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-indigo-400 underline text-sm">
         📎 ดาวน์โหลดไฟล์
       </a>
     )
@@ -131,7 +120,7 @@ function MessageMedia({ msg }: { msg: Message }) {
 function MessageBubble({ msg }: { msg: Message }) {
   const isCustomer = msg.role === 'CUSTOMER'
   const isNote = msg.role === 'AI'
-  const type = (msg as any).messageType ?? 'text'
+  const type = msg.messageType ?? 'text'
   const isMedia = type !== 'text'
 
   return (
