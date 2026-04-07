@@ -153,6 +153,7 @@ export async function conversationRoutes(app: FastifyInstance) {
     const buffer = Buffer.from(await lineRes.arrayBuffer())
     reply.header('Content-Type', contentType)
     reply.header('Cache-Control', 'private, max-age=3600')
+    reply.header('Cross-Origin-Resource-Policy', 'cross-origin')
     return reply.send(buffer)
   })
 }
