@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: centrix_secret
       POSTGRES_DB: centrix
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - centrix-postgres-data:/var/lib/postgresql/data
     networks:
@@ -24,7 +24,7 @@ services:
     container_name: centrix-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - centrix-redis-data:/data
     networks:
@@ -42,7 +42,7 @@ services:
     container_name: centrix-api
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5001:5000"
     environment:
       PORT: 5000
       DATABASE_URL: postgresql://centrix:centrix_secret@postgres:5432/centrix
@@ -69,7 +69,7 @@ services:
     container_name: centrix-web
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3002:3001"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://192.168.2.109:5001}
       NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://192.168.2.109:5001}
