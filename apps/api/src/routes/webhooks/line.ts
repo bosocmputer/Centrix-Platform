@@ -72,7 +72,8 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
 
       const text = msgType === 'text' ? event.message.text as string : ''
       const detectedLang = msgType === 'text' ? await detectLanguage(text) : 'unknown'
-      const translatedText = (msgType === 'text' && detectedLang !== 'th') ? await translateText(text, 'th') : text
+      const needsTranslation = msgType === 'text' && detectedLang !== 'th' && detectedLang !== 'unknown'
+      const translatedText = needsTranslation ? await translateText(text, 'th') : null
 
       const message = await prisma.message.create({
         data: {
@@ -83,7 +84,7 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
           mediaUrl: msgType !== 'text' ? event.message.id : undefined,
           originalContent: msgType === 'text' ? text : undefined,
           originalLanguage: msgType === 'text' ? detectedLang : undefined,
-          translatedContent: msgType === 'text' ? translatedText : undefined,
+          translatedContent: translatedText ?? undefined,
         },
       })
 

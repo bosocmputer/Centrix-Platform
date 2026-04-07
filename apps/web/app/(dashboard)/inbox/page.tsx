@@ -143,7 +143,7 @@ function MessageBubble({ msg }: { msg: Message }) {
               </span>
             )}
             <p>{msg.content}</p>
-            {msg.translatedContent && isCustomer && (
+            {msg.translatedContent && msg.translatedContent !== msg.content && isCustomer && (
               <p className="text-[11px] text-gray-500 mt-1.5 pt-1.5 border-t border-white/5 italic">{msg.translatedContent}</p>
             )}
           </div>
