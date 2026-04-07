@@ -50,6 +50,17 @@ export interface Conversation {
   assignedTo?: string
   lastMessageAt: Date
   createdAt: Date
+  tags?: string[]
+  customer?: {
+    id: string
+    name?: string
+    email?: string
+    phone?: string
+    avatarUrl?: string
+    channelProfiles?: { type: ChannelType; externalId: string }[]
+  }
+  channel?: { type: ChannelType; name: string }
+  messages?: Message[]
 }
 
 export interface Message {
