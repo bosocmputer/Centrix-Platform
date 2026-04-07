@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { Plus, Trash2, Edit2, CheckCircle2, XCircle, ToggleLeft, ToggleRight } from 'lucide-react'
+import { Plus, Trash2, Edit2, CheckCircle2, XCircle, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
 
 const CHANNEL_META: Record<string, { label: string; bg: string; icon: string; fields: { key: string; label: string; placeholder: string }[] }> = {
   FACEBOOK:  { label: 'Facebook Messenger', bg: 'bg-[#1877F2]', icon: 'f', fields: [{ key: 'accessToken', label: 'Page Access Token', placeholder: 'EAAxxxxxxx...' }, { key: 'secret', label: 'App Secret', placeholder: 'App Secret จาก Meta Developer' }] },
@@ -102,6 +102,18 @@ export default function ChannelsPage() {
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-indigo-500/50 transition" />
                 </div>
               ))}
+              {form.type === 'LINE' && (
+                <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-300">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold mb-1">LINE OA Free Plan ไม่รองรับการส่งข้อความกลับหาลูกค้า</p>
+                    <p className="text-amber-400/80 leading-relaxed">
+                      การตอบกลับจาก Agent ใช้ <span className="font-medium text-amber-300">Push Message API</span> ซึ่งต้องอัปเกรดเป็นแพ็กเกจเสียเงิน
+                      (Light plan ~880 บาท/เดือน) ก่อนเชื่อมต่อ LINE OA กรุณาตรวจสอบว่าบัญชีของคุณเป็น Paid Plan แล้ว
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex gap-2 justify-end mt-1">
                 <button type="button" onClick={() => { setShowForm(false); setEditChannel(null); resetForm() }}
                   className="px-4 py-2 text-sm text-gray-400 border border-white/10 rounded-xl hover:bg-white/5 transition">
