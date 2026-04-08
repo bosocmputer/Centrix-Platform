@@ -95,6 +95,15 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
         data: { lastMessageAt: new Date() },
       })
 
+      // บันทึก replyToken ใน Redis (TTL 19 นาที) เพื่อใช้ Reply API ฟรีแทน Push API
+      if (event.replyToken) {
+        await redis.set(
+          `line:reply_token:${conversation.id}`,
+          event.replyToken,
+          'EX', 19 * 60  // 19 นาที
+        )
+      }
+
       const redisChannel = `org:${channel.orgId}`
       console.log('[LINE-WH] Publishing to Redis channel:', redisChannel, 'message id:', message.id)
       const publishResult = await redis.publish(

@@ -132,11 +132,26 @@ export async function conversationRoutes(app: FastifyInstance) {
         } else {
           lineMessage = { type: 'text', text: translatedContent ?? content }
         }
-        await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-          body: JSON.stringify({ to: profile.externalId, messages: [lineMessage] }),
-        })
+
+        // ใช้ Reply API ถ้ายังมี replyToken (< 19 นาที) — ฟรี ไม่หักโควต้า
+        const replyToken = await redis.get(`line:reply_token:${id}`)
+        if (replyToken) {
+          // Reply API — ฟรี
+          await fetch('https://api.line.me/v2/bot/message/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ replyToken, messages: [lineMessage] }),
+          })
+          // ลบ token ทิ้งทันที (ใช้ได้ครั้งเดียว)
+          await redis.del(`line:reply_token:${id}`)
+        } else {
+          // Push API — หักโควต้า (ใช้เมื่อเกิน 19 นาที หรือ token หมดแล้ว)
+          await fetch('https://api.line.me/v2/bot/message/push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ to: profile.externalId, messages: [lineMessage] }),
+          })
+        }
       }
     } else if (channelType === 'FACEBOOK' && accessToken) {
       const profile = conversation.customer.channelProfiles.find(p => p.type === 'FACEBOOK')
