@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
 import { Save, AlertTriangle, ExternalLink, Globe, Key, Facebook } from 'lucide-react'
@@ -65,11 +65,14 @@ export default function ConfigPage() {
   const [form, setForm] = useState<Record<string, string>>({})
   const [saved, setSaved] = useState(false)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<Record<string, string>>({
     queryKey: ['config'],
     queryFn: () => api.get('/api/config').then((r) => r.data.config as Record<string, string>),
-    onSuccess: (data) => setForm(data),
-  } as any)
+  })
+
+  useEffect(() => {
+    if (data) setForm(data)
+  }, [data])
 
   const saveMutation = useMutation({
     mutationFn: (d: Record<string, string>) => api.put('/api/config', d),
