@@ -9,9 +9,8 @@ export async function facebookWebhookRoutes(app: FastifyInstance) {
   app.get('/api/webhooks/facebook', async (req, reply) => {
     const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = req.query as Record<string, string>
     if (mode === 'subscribe') {
-      // ตรวจสอบจาก DB ก่อน ถ้าไม่มีทำ fallback ไป env
       const channel = await prisma.channel.findFirst({ where: { type: 'FACEBOOK', isActive: true } })
-      const verifyToken = channel ? (await getOrgConfig(channel.orgId, 'facebook_verify_token')) ?? process.env.FACEBOOK_VERIFY_TOKEN : process.env.FACEBOOK_VERIFY_TOKEN
+      const verifyToken = channel?.secret ?? process.env.FACEBOOK_VERIFY_TOKEN
       if (token === verifyToken) return reply.send(parseInt(challenge))
     }
     return reply.status(403).send({ error: 'Forbidden' })

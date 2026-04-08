@@ -6,7 +6,7 @@ import { api } from '@/lib/api'
 import { Plus, Trash2, Edit2, CheckCircle2, XCircle, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
 
 const CHANNEL_META: Record<string, { label: string; bg: string; icon: string; fields: { key: string; label: string; placeholder: string }[] }> = {
-  FACEBOOK:  { label: 'Facebook Messenger', bg: 'bg-[#1877F2]', icon: 'f', fields: [{ key: 'accessToken', label: 'Page Access Token', placeholder: 'EAAxxxxxxx...' }, { key: 'secret', label: 'App Secret', placeholder: 'App Secret จาก Meta Developer' }] },
+  FACEBOOK:  { label: 'Facebook Messenger', bg: 'bg-[#1877F2]', icon: 'f', fields: [{ key: 'accessToken', label: 'Page Access Token', placeholder: 'EAAxxxxxxx...' }, { key: 'secret', label: 'Webhook Verify Token', placeholder: 'ค่าที่ใส่ใน Meta → Verify Token (ตั้งเองได้)' }] },
   INSTAGRAM: { label: 'Instagram DM', bg: 'bg-[#E1306C]', icon: '✦', fields: [{ key: 'accessToken', label: 'Access Token', placeholder: 'Instagram Access Token' }, { key: 'secret', label: 'App Secret', placeholder: 'App Secret' }] },
   LINE:      { label: 'LINE OA', bg: 'bg-[#06C755]', icon: 'L', fields: [{ key: 'accessToken', label: 'Channel Access Token', placeholder: 'Channel Access Token จาก LINE Developers' }, { key: 'secret', label: 'Channel Secret', placeholder: 'Channel Secret' }] },
   WECHAT:    { label: 'WeChat', bg: 'bg-[#07C160]', icon: 'W', fields: [{ key: 'accessToken', label: 'Access Token', placeholder: 'WeChat Access Token' }, { key: 'secret', label: 'App Secret', placeholder: 'App Secret' }] },
