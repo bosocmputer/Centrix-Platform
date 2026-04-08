@@ -54,6 +54,9 @@ services:
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
       FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
       FACEBOOK_VERIFY_TOKEN: ${FACEBOOK_VERIFY_TOKEN:-centrix-verify-token}
+      EXTERNAL_URL: ${EXTERNAL_URL:-http://192.168.2.109:5001}
+    volumes:
+      - centrix-uploads-data:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -85,6 +88,7 @@ services:
 volumes:
   centrix-postgres-data:
   centrix-redis-data:
+  centrix-uploads-data:
 
 networks:
   centrix-network:

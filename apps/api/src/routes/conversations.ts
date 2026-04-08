@@ -1,10 +1,54 @@
 import type { FastifyInstance } from 'fastify'
+import { createWriteStream, createReadStream, existsSync, mkdirSync } from 'node:fs'
+import { pipeline } from 'node:stream/promises'
+import { randomUUID } from 'node:crypto'
+import { extname, join } from 'node:path'
 import { prisma } from '../lib/prisma.js'
 import { translateText, detectLanguage } from '../lib/translate.js'
 import { redis } from '../lib/redis.js'
 
+const UPLOADS_DIR = '/app/uploads'
+const MIME_MAP: Record<string, string> = {
+  '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+  '.gif': 'image/gif', '.webp': 'image/webp', '.mp4': 'video/mp4',
+  '.pdf': 'application/pdf',
+}
+
+function ensureUploadsDir() {
+  if (!existsSync(UPLOADS_DIR)) mkdirSync(UPLOADS_DIR, { recursive: true })
+}
+
 export async function conversationRoutes(app: FastifyInstance) {
-  // GET /api/conversations — list ทั้งหมดของ org
+  // POST /api/media/upload — อัปโหลดไฟล์ แล้วได้ public URL กลับ
+  app.post('/api/media/upload', { onRequest: [app.authenticate] }, async (req, reply) => {
+    ensureUploadsDir()
+    const data = await req.file()
+    if (!data) return reply.status(400).send({ error: 'No file' })
+
+    const ext = extname(data.filename).toLowerCase() || '.bin'
+    const filename = `${randomUUID()}${ext}`
+    const dest = join(UPLOADS_DIR, filename)
+
+    await pipeline(data.file, createWriteStream(dest))
+
+    const externalUrl = process.env.EXTERNAL_URL ?? 'http://localhost:5000'
+    return reply.send({ url: `${externalUrl}/api/uploads/${filename}`, filename })
+  })
+
+  // GET /api/uploads/:filename — serve ไฟล์ที่อัปโหลด (สำหรับ LINE fetch)
+  app.get('/api/uploads/:filename', async (req, reply) => {
+    const { filename } = req.params as { filename: string }
+    if (!/^[\w.-]+$/.test(filename)) return reply.status(400).send({ error: 'Invalid filename' })
+    const filePath = join(UPLOADS_DIR, filename)
+    if (!existsSync(filePath)) return reply.status(404).send({ error: 'Not found' })
+
+    const ext = extname(filename).toLowerCase()
+    const contentType = MIME_MAP[ext] ?? 'application/octet-stream'
+    reply.header('Content-Type', contentType)
+    reply.header('Cross-Origin-Resource-Policy', 'cross-origin')
+    reply.header('Cache-Control', 'public, max-age=86400')
+    return reply.send(createReadStream(filePath))
+  })
   app.get('/api/conversations', { onRequest: [app.authenticate] }, async (req, reply) => {
     const { orgId } = req.user as { orgId: string }
     const conversations = await prisma.conversation.findMany({
@@ -32,7 +76,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   // POST /api/conversations/:id/messages — Agent ส่งข้อความ
   app.post('/api/conversations/:id/messages', { onRequest: [app.authenticate] }, async (req, reply) => {
     const { id } = req.params as { id: string }
-    const { content } = req.body as { content: string }
+    const { content, messageType = 'text', mediaUrl } = req.body as { content: string; messageType?: string; mediaUrl?: string }
     const { userId, orgId } = req.user as { userId: string; orgId: string }
 
     const conversation = await prisma.conversation.findFirst({
@@ -48,16 +92,18 @@ export async function conversationRoutes(app: FastifyInstance) {
     })
     const targetLang = lastCustomerMsg?.originalLanguage ?? 'en'
 
-    // แปลข้อความ Agent → ภาษาลูกค้า
-    const translatedContent = await translateText(content, targetLang)
+    // แปลข้อความ Agent → ภาษาลูกค้า (เฉพาะ text)
+    const translatedContent = messageType === 'text' ? await translateText(content, targetLang) : null
 
     const message = await prisma.message.create({
       data: {
         conversationId: id,
         role: 'AGENT',
+        messageType,
         content,
-        translatedContent,
-        originalLanguage: targetLang,
+        mediaUrl: mediaUrl ?? undefined,
+        translatedContent: translatedContent ?? undefined,
+        originalLanguage: messageType === 'text' ? targetLang : undefined,
       },
     })
 
@@ -73,16 +119,20 @@ export async function conversationRoutes(app: FastifyInstance) {
     if (channelType === 'LINE' && accessToken) {
       const profile = conversation.customer.channelProfiles.find(p => p.type === 'LINE')
       if (profile) {
+        let lineMessage: any
+        if (messageType === 'image' && mediaUrl) {
+          lineMessage = { type: 'image', originalContentUrl: mediaUrl, previewImageUrl: mediaUrl }
+        } else if (messageType === 'video' && mediaUrl) {
+          lineMessage = { type: 'video', originalContentUrl: mediaUrl, previewImageUrl: mediaUrl }
+        } else if (messageType === 'file' && mediaUrl) {
+          lineMessage = { type: 'text', text: `📎 ${content}\n${mediaUrl}` }
+        } else {
+          lineMessage = { type: 'text', text: translatedContent ?? content }
+        }
         await fetch('https://api.line.me/v2/bot/message/push', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({
-            to: profile.externalId,
-            messages: [{ type: 'text', text: translatedContent }],
-          }),
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+          body: JSON.stringify({ to: profile.externalId, messages: [lineMessage] }),
         })
       }
     } else if (channelType === 'FACEBOOK' && accessToken) {
