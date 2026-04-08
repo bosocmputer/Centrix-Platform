@@ -131,11 +131,13 @@ function MessageMedia({ msg }: { msg: Message }) {
   const type = msg.messageType ?? "text";
   const mediaId = msg.mediaUrl;
 
-  if (!token || !mediaId) return null;
-  // Agent-uploaded files already have a full URL; LINE media uses messageId via proxy
+  if (!mediaId) return null;
+  // Public URL (Facebook/agent upload) — render directly; LINE messageId needs proxy
   const src = mediaId.startsWith('http')
     ? mediaId
-    : `${apiUrl}/api/media/line/${mediaId}?token=${token}`;
+    : token ? `${apiUrl}/api/media/line/${mediaId}?token=${token}` : null;
+
+  if (!src) return null;
 
   if (type === "image") {
     return (

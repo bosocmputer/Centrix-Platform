@@ -141,13 +141,18 @@ export async function conversationRoutes(app: FastifyInstance) {
     } else if (channelType === 'FACEBOOK' && accessToken) {
       const profile = conversation.customer.channelProfiles.find(p => p.type === 'FACEBOOK')
       if (profile) {
+        let fbMessage: any
+        if (mediaUrl && messageType !== 'text') {
+          const typeMap: Record<string, string> = { image: 'image', video: 'video', audio: 'audio', file: 'file' }
+          const fbType = typeMap[messageType] ?? 'file'
+          fbMessage = { attachment: { type: fbType, payload: { url: mediaUrl, is_reusable: true } } }
+        } else {
+          fbMessage = { text: translatedContent ?? content }
+        }
         await fetch(`https://graph.facebook.com/v19.0/me/messages?access_token=${accessToken}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipient: { id: profile.externalId },
-            message: { text: translatedContent },
-          }),
+          body: JSON.stringify({ recipient: { id: profile.externalId }, message: fbMessage }),
         })
       }
     }

@@ -23,10 +23,13 @@ export async function facebookWebhookRoutes(app: FastifyInstance) {
 
     for (const entry of body.entry ?? []) {
       for (const event of entry.messaging ?? []) {
-        if (!event.message?.text) continue
+        if (!event.message) continue
+        const hasText = !!event.message.text
+        const hasAttachment = !!(event.message.attachments?.length)
+        if (!hasText && !hasAttachment) continue
 
         const externalId = event.sender.id
-        const text = event.message.text
+        const text = event.message.text ?? ''
 
         // หา channel ที่เป็น FACEBOOK
         const channel = await prisma.channel.findFirst({
@@ -70,20 +73,38 @@ export async function facebookWebhookRoutes(app: FastifyInstance) {
           })
         }
 
-        // detect ภาษาและแปล
+        // หา attachment ถ้ามี
+        let messageType = 'text'
+        let mediaUrl: string | null = null
+        if (hasAttachment) {
+          const att = event.message.attachments[0]
+          if (att.type === 'image') { messageType = 'image'; mediaUrl = att.payload?.url ?? null }
+          else if (att.type === 'video') { messageType = 'video'; mediaUrl = att.payload?.url ?? null }
+          else if (att.type === 'audio') { messageType = 'audio'; mediaUrl = att.payload?.url ?? null }
+          else if (att.type === 'file') { messageType = 'file'; mediaUrl = att.payload?.url ?? null }
+          else if (att.type === 'sticker') { messageType = 'sticker'; mediaUrl = att.payload?.url ?? null }
+        }
+
+        // detect ภาษาและแปล (เฉพาะ text)
         const translateApiKey = await getOrgConfig(channel.orgId, 'google_translate_api_key')
-        const detectedLang = await detectLanguage(text, translateApiKey)
-        const needsTranslation = detectedLang !== 'th' && detectedLang !== 'unknown'
-        const translatedText = needsTranslation ? await translateText(text, 'th', translateApiKey) : null
+        let detectedLang = 'unknown'
+        let translatedText: string | null = null
+        if (hasText && text) {
+          detectedLang = await detectLanguage(text, translateApiKey)
+          const needsTranslation = detectedLang !== 'th' && detectedLang !== 'unknown'
+          translatedText = needsTranslation ? await translateText(text, 'th', translateApiKey) : null
+        }
 
         const message = await prisma.message.create({
           data: {
             conversationId: conversation.id,
             role: 'CUSTOMER',
-            content: text,
-            originalContent: text,
+            messageType,
+            content: text || (mediaUrl ? `[${messageType}]` : ''),
+            originalContent: text || undefined,
             originalLanguage: detectedLang,
-            translatedContent: translatedText,
+            translatedContent: translatedText ?? undefined,
+            mediaUrl: mediaUrl ?? undefined,
           },
         })
 
