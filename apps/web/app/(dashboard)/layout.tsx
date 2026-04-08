@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { MessageSquare, BarChart2, Megaphone, Settings, Users, LogOut, Zap } from 'lucide-react'
+import { MessageSquare, BarChart2, Megaphone, Settings, Users, LogOut, Zap, SlidersHorizontal } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 
 const nav = [
@@ -11,6 +11,7 @@ const nav = [
   { href: '/broadcast', label: 'Broadcast', icon: Megaphone },
   { href: '/settings/channels', label: 'Channels', icon: Settings },
   { href: '/settings/users', label: 'Users', icon: Users },
+  { href: '/settings/config', label: 'Config', icon: SlidersHorizontal },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

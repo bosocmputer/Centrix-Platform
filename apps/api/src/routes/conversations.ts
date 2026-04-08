@@ -6,6 +6,7 @@ import { extname, join } from 'node:path'
 import { prisma } from '../lib/prisma.js'
 import { translateText, detectLanguage } from '../lib/translate.js'
 import { redis } from '../lib/redis.js'
+import { getOrgConfig } from './config.js'
 
 const UPLOADS_DIR = '/app/uploads'
 const MIME_MAP: Record<string, string> = {
@@ -22,6 +23,7 @@ export async function conversationRoutes(app: FastifyInstance) {
   // POST /api/media/upload — อัปโหลดไฟล์ แล้วได้ public URL กลับ
   app.post('/api/media/upload', { onRequest: [app.authenticate] }, async (req, reply) => {
     ensureUploadsDir()
+    const { orgId } = req.user as { orgId: string }
     const data = await req.file()
     if (!data) return reply.status(400).send({ error: 'No file' })
 
@@ -31,7 +33,7 @@ export async function conversationRoutes(app: FastifyInstance) {
 
     await pipeline(data.file, createWriteStream(dest))
 
-    const externalUrl = process.env.EXTERNAL_URL ?? 'http://localhost:5000'
+    const externalUrl = await getOrgConfig(orgId, 'external_url') ?? process.env.EXTERNAL_URL ?? 'http://localhost:5000'
     return reply.send({ url: `${externalUrl}/api/uploads/${filename}`, filename })
   })
 
@@ -93,7 +95,8 @@ export async function conversationRoutes(app: FastifyInstance) {
     const targetLang = lastCustomerMsg?.originalLanguage ?? 'en'
 
     // แปลข้อความ Agent → ภาษาลูกค้า (เฉพาะ text)
-    const translatedContent = messageType === 'text' ? await translateText(content, targetLang) : null
+    const translateApiKey = await getOrgConfig(orgId, 'google_translate_api_key')
+    const translatedContent = messageType === 'text' ? await translateText(content, targetLang, translateApiKey) : null
 
     const message = await prisma.message.create({
       data: {

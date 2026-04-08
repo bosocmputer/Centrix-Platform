@@ -10,6 +10,7 @@ import { authRoutes } from './routes/auth.js'
 import { conversationRoutes } from './routes/conversations.js'
 import { channelRoutes } from './routes/channels.js'
 import { userRoutes } from './routes/users.js'
+import { configRoutes } from './routes/config.js'
 import { facebookWebhookRoutes } from './routes/webhooks/facebook.js'
 import { lineWebhookRoutes } from './routes/webhooks/line.js'
 
@@ -37,6 +38,7 @@ async function main() {
   await app.register(conversationRoutes)
   await app.register(channelRoutes)
   await app.register(userRoutes)
+  await app.register(configRoutes)
   await app.register(facebookWebhookRoutes)
   await app.register(lineWebhookRoutes)
 

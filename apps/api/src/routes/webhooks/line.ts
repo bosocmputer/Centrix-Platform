@@ -3,6 +3,7 @@ import crypto from 'crypto'
 import { prisma } from '../../lib/prisma.js'
 import { detectLanguage, translateText } from '../../lib/translate.js'
 import { redis } from '../../lib/redis.js'
+import { getOrgConfig } from '../config.js'
 
 export async function lineWebhookRoutes(app: FastifyInstance) {
   app.post('/api/webhooks/line', async (req, reply) => {
@@ -71,9 +72,10 @@ export async function lineWebhookRoutes(app: FastifyInstance) {
       }
 
       const text = msgType === 'text' ? event.message.text as string : ''
-      const detectedLang = msgType === 'text' ? await detectLanguage(text) : 'unknown'
+      const translateApiKey = await getOrgConfig(channel.orgId, 'google_translate_api_key')
+      const detectedLang = msgType === 'text' ? await detectLanguage(text, translateApiKey) : 'unknown'
       const needsTranslation = msgType === 'text' && detectedLang !== 'th' && detectedLang !== 'unknown'
-      const translatedText = needsTranslation ? await translateText(text, 'th') : null
+      const translatedText = needsTranslation ? await translateText(text, 'th', translateApiKey) : null
 
       const message = await prisma.message.create({
         data: {

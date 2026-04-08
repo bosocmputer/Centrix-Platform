@@ -2,13 +2,17 @@ import type { FastifyInstance } from 'fastify'
 import { prisma } from '../../lib/prisma.js'
 import { detectLanguage, translateText } from '../../lib/translate.js'
 import { redis } from '../../lib/redis.js'
+import { getOrgConfig } from '../config.js'
 
 export async function facebookWebhookRoutes(app: FastifyInstance) {
   // Webhook verification
   app.get('/api/webhooks/facebook', async (req, reply) => {
     const { 'hub.mode': mode, 'hub.verify_token': token, 'hub.challenge': challenge } = req.query as Record<string, string>
-    if (mode === 'subscribe' && token === process.env.FACEBOOK_VERIFY_TOKEN) {
-      return reply.send(parseInt(challenge))
+    if (mode === 'subscribe') {
+      // ตรวจสอบจาก DB ก่อน ถ้าไม่มีทำ fallback ไป env
+      const channel = await prisma.channel.findFirst({ where: { type: 'FACEBOOK', isActive: true } })
+      const verifyToken = channel ? (await getOrgConfig(channel.orgId, 'facebook_verify_token')) ?? process.env.FACEBOOK_VERIFY_TOKEN : process.env.FACEBOOK_VERIFY_TOKEN
+      if (token === verifyToken) return reply.send(parseInt(challenge))
     }
     return reply.status(403).send({ error: 'Forbidden' })
   })
@@ -68,8 +72,10 @@ export async function facebookWebhookRoutes(app: FastifyInstance) {
         }
 
         // detect ภาษาและแปล
-        const detectedLang = await detectLanguage(text)
-        const translatedText = detectedLang !== 'th' ? await translateText(text, 'th') : text
+        const translateApiKey = await getOrgConfig(channel.orgId, 'google_translate_api_key')
+        const detectedLang = await detectLanguage(text, translateApiKey)
+        const needsTranslation = detectedLang !== 'th' && detectedLang !== 'unknown'
+        const translatedText = needsTranslation ? await translateText(text, 'th', translateApiKey) : null
 
         const message = await prisma.message.create({
           data: {
