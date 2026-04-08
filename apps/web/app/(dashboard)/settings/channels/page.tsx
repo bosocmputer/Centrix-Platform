@@ -105,6 +105,7 @@ export default function ChannelsPage() {
               {/* Setup Guide */}
               {form.type === 'LINE' && (
                 <div className="flex flex-col gap-2">
+                  {/* How to get credentials */}
                   <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300">
                     <div className="flex items-center gap-1.5 font-semibold mb-2"><Info size={13} /> วิธีเอาค่าจาก LINE Developers</div>
                     <ol className="flex flex-col gap-1.5 text-indigo-300/80 leading-relaxed list-none">
@@ -113,28 +114,66 @@ export default function ChannelsPage() {
                       <li>3. แท็บ <span className="text-white font-medium">Basic settings</span> → copy <span className="text-white font-medium">Channel secret</span></li>
                       <li>4. แท็บ <span className="text-white font-medium">Messaging API</span> → กด Issue → copy <span className="text-white font-medium">Channel access token</span></li>
                       <li>5. ในแท็บเดียวกัน → Webhook URL ใส่: <span className="text-white font-mono bg-white/10 px-1 rounded">https://[tunnel]/api/webhooks/line</span></li>
+                      <li>6. เปิด <span className="text-white font-medium">Use webhook</span> → Enabled</li>
                     </ol>
                   </div>
+                  {/* Pricing */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-xs text-gray-300">
+                    <div className="flex items-center gap-1.5 font-semibold mb-2 text-white"><Info size={13} /> ค่าใช้จ่าย LINE OA (อัปเดต ส.ค. 2567)</div>
+                    <table className="w-full text-[11px] mb-2">
+                      <thead><tr className="text-gray-500 border-b border-white/10"><th className="text-left pb-1">แพ็กเกจ</th><th className="text-right pb-1">ราคา/เดือน</th><th className="text-right pb-1">ข้อความฟรี</th><th className="text-right pb-1">ส่วนเกิน/ข้อความ</th></tr></thead>
+                      <tbody className="text-gray-400">
+                        <tr><td className="py-0.5">Free</td><td className="text-right">ฟรี</td><td className="text-right">300</td><td className="text-right text-red-400">ส่งเพิ่มไม่ได้</td></tr>
+                        <tr><td className="py-0.5">Basic</td><td className="text-right">1,280 ฿</td><td className="text-right">15,000</td><td className="text-right">0.10 ฿</td></tr>
+                        <tr><td className="py-0.5">Pro</td><td className="text-right">1,780 ฿</td><td className="text-right">35,000</td><td className="text-right">0.06 ฿</td></tr>
+                      </tbody>
+                    </table>
+                    <div className="flex flex-col gap-1 text-gray-400 leading-relaxed">
+                      <p>• <span className="text-emerald-400 font-medium">Reply API (ฟรี 100%)</span> — ตอบกลับภายใน 19 นาทีหลังลูกค้าส่งมา ไม่หักโควต้า Centrix จะใช้วิธีนี้อัตโนมัติ</p>
+                      <p>• <span className="text-amber-400 font-medium">Push API (หักโควต้า)</span> — ใช้เมื่อเกิน 19 นาที หรือส่ง proactive message</p>
+                      <p>• นับตามจำนวนผู้รับ เช่น broadcast 100 คน = 100 ข้อความ</p>
+                      <p>• Reply ครั้งเดียวใส่ได้สูงสุด <span className="text-white font-medium">5 balloon</span> — Centrix รวม message ในช่วง 2 วินาทีอัตโนมัติ</p>
+                    </div>
+                  </div>
+                  {/* Warning */}
                   <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-300">
                     <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-semibold mb-1">LINE OA Free Plan ไม่รองรับการส่งข้อความกลับหาลูกค้า</p>
-                      <p className="text-amber-400/80 leading-relaxed">ต้องอัปเกรดเป็น Paid Plan (Light ~880 บาท/เดือน) ก่อน ถึงจะใช้ Push Message API ได้</p>
+                      <p className="font-semibold mb-1">Free Plan ส่งข้อความกลับได้แค่ 300 ข้อความ/เดือน</p>
+                      <p className="text-amber-400/80 leading-relaxed">ถ้าใช้ครบแล้วจะส่งไม่ได้จนถึงเดือนหน้า — แนะนำอัปเกรดเป็น Basic (1,280 ฿) หากมีลูกค้าประจำ</p>
                     </div>
                   </div>
                 </div>
               )}
               {form.type === 'FACEBOOK' && (
-                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300">
-                  <div className="flex items-center gap-1.5 font-semibold mb-2"><Info size={13} /> วิธีเอาค่าจาก Meta Developer</div>
-                  <ol className="flex flex-col gap-1.5 text-indigo-300/80 leading-relaxed list-none">
-                    <li>1. ไปที่ <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-0.5">developers.facebook.com/apps <ExternalLink size={10}/></a> → เลือก App</li>
-                    <li>2. เมนูซ้าย → <span className="text-white font-medium">กรณีการใช้งาน</span> → Messenger → กำหนดค่า</li>
-                    <li>3. <span className="text-white font-medium">Webhook Verify Token</span>: ตั้งค่าเองได้ เช่น <span className="font-mono bg-white/10 px-1 rounded text-white">centrix-verify-2026</span> → ใส่ค่าเดียวกันในช่องด้านบน</li>
-                    <li>4. Webhook URL ใส่: <span className="text-white font-mono bg-white/10 px-1 rounded">https://[tunnel]/api/webhooks/facebook</span></li>
-                    <li>5. <span className="text-white font-medium">Page Access Token</span>: ขั้นตอน 2 → สร้างโทเค็นการเข้าถึง → กด "สร้าง" ข้างชื่อ Page</li>
-                    <li>6. Subscribe Webhook ให้กับ Page → เลือก <span className="text-white font-medium">messages</span></li>
-                  </ol>
+                <div className="flex flex-col gap-2">
+                  {/* How to get credentials */}
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300">
+                    <div className="flex items-center gap-1.5 font-semibold mb-2"><Info size={13} /> วิธีเอาค่าจาก Meta Developer</div>
+                    <ol className="flex flex-col gap-1.5 text-indigo-300/80 leading-relaxed list-none">
+                      <li>1. ไปที่ <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-0.5">developers.facebook.com/apps <ExternalLink size={10}/></a> → เลือก App</li>
+                      <li>2. เมนูซ้าย → <span className="text-white font-medium">กรณีการใช้งาน</span> → Messenger → กำหนดค่า</li>
+                      <li>3. <span className="text-white font-medium">Webhook Verify Token</span>: ตั้งค่าเองได้ เช่น <span className="font-mono bg-white/10 px-1 rounded text-white">centrix-verify-2026</span> → ใส่ค่าเดียวกันในช่องด้านบน</li>
+                      <li>4. Webhook URL ใส่: <span className="text-white font-mono bg-white/10 px-1 rounded">https://[tunnel]/api/webhooks/facebook</span></li>
+                      <li>5. <span className="text-white font-medium">Page Access Token</span>: ขั้นตอน 2 → สร้างโทเค็นการเข้าถึง → กด "สร้าง" ข้างชื่อ Page</li>
+                      <li>6. Subscribe Webhook ให้กับ Page → เลือก <span className="text-white font-medium">messages</span></li>
+                    </ol>
+                  </div>
+                  {/* Rate Limits */}
+                  <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 text-xs text-gray-300">
+                    <div className="flex items-center gap-1.5 font-semibold mb-2 text-white"><Info size={13} /> Rate Limits ของ Messenger API</div>
+                    <div className="flex flex-col gap-1.5 text-gray-400 leading-relaxed">
+                      <p>• <span className="text-white font-medium">Send API (ข้อความ/ลิงก์/สติกเกอร์)</span> — สูงสุด 300 ครั้ง/วินาที ต่อ Page</p>
+                      <p>• <span className="text-white font-medium">Send API (audio/video)</span> — สูงสุด 10 ครั้ง/วินาที ต่อ Page</p>
+                      <p>• <span className="text-white font-medium">Daily quota</span> — 200 × จำนวน Engaged Users ต่อ 24 ชั่วโมง</p>
+                      <p>• ส่งข้อความเดิมซ้ำๆ หา 1 thread มากเกินไปอาจถูก throttle</p>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-white/10 flex flex-col gap-1 text-gray-400">
+                      <p className="font-medium text-amber-300">⚠ Development Mode</p>
+                      <p>Webhook จะส่งข้อความเฉพาะ <span className="text-white font-medium">Admin/Tester ของ App</span> เท่านั้น ลูกค้าทั่วไปจะไม่ได้รับ</p>
+                      <p>→ ต้อง <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline">เปิด Live Mode</a> + ใส่ Privacy Policy URL ก่อนใช้งานจริง</p>
+                    </div>
+                  </div>
                 </div>
               )}
               <div className="flex gap-2 justify-end mt-1">
