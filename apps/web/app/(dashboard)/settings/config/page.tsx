@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { Save, AlertTriangle, ExternalLink, Globe, Key, Facebook } from 'lucide-react'
+import { Save, AlertTriangle, ExternalLink, Globe, Key } from 'lucide-react'
 
 const CONFIG_SECTIONS = [
   {
@@ -29,33 +29,6 @@ const CONFIG_SECTIONS = [
         placeholder: 'AIzaSy...',
         description: 'API Key จาก Google Cloud Console — ใช้สำหรับแปลภาษาลูกค้าอัตโนมัติ',
         type: 'password',
-      },
-    ],
-  },
-  {
-    title: 'Facebook / Meta',
-    icon: Facebook,
-    fields: [
-      {
-        key: 'facebook_app_id',
-        label: 'App ID',
-        placeholder: '123456789012345',
-        description: 'App ID จาก Meta Developer Console',
-        type: 'text',
-      },
-      {
-        key: 'facebook_app_secret',
-        label: 'App Secret',
-        placeholder: 'abc123...',
-        description: 'App Secret จาก Meta Developer Console',
-        type: 'password',
-      },
-      {
-        key: 'facebook_verify_token',
-        label: 'Webhook Verify Token',
-        placeholder: 'my-verify-token',
-        description: 'Token ที่ใช้ verify webhook URL ใน Meta Developer Console',
-        type: 'text',
       },
     ],
   },

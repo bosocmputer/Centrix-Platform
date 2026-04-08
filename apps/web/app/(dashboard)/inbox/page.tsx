@@ -132,7 +132,10 @@ function MessageMedia({ msg }: { msg: Message }) {
   const mediaId = msg.mediaUrl;
 
   if (!token || !mediaId) return null;
-  const src = `${apiUrl}/api/media/line/${mediaId}?token=${token}`;
+  // Agent-uploaded files already have a full URL; LINE media uses messageId via proxy
+  const src = mediaId.startsWith('http')
+    ? mediaId
+    : `${apiUrl}/api/media/line/${mediaId}?token=${token}`;
 
   if (type === "image") {
     return (
@@ -658,8 +661,14 @@ export default function InboxPage() {
                   <div className="w-8 h-8 rounded-lg bg-indigo-600/20 flex items-center justify-center shrink-0">
                     <Image size={14} className="text-indigo-400" />
                   </div>
-                  <span className="text-xs text-gray-300 flex-1 truncate">{pendingMedia.filename}</span>
-                  <button type="button" onClick={() => setPendingMedia(null)} className="p-1 text-gray-500 hover:text-red-400 transition">
+                  <span className="text-xs text-gray-300 flex-1 truncate">
+                    {pendingMedia.filename}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingMedia(null)}
+                    className="p-1 text-gray-500 hover:text-red-400 transition"
+                  >
                     <X size={13} />
                   </button>
                 </div>
@@ -667,11 +676,25 @@ export default function InboxPage() {
 
               <div className="flex items-end gap-2 px-3 pb-3 pt-2">
                 {/* hidden file input */}
-                <input ref={fileInputRef} type="file" accept="image/*,video/*,.pdf" className="hidden" onChange={handleFileSelect} />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*,video/*,.pdf"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
                 {!isNote && (
-                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
-                    className="p-2.5 rounded-xl text-gray-500 hover:text-indigo-400 hover:bg-white/5 transition disabled:opacity-40 shrink-0">
-                    {uploading ? <RefreshCw size={15} className="animate-spin" /> : <Paperclip size={15} />}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="p-2.5 rounded-xl text-gray-500 hover:text-indigo-400 hover:bg-white/5 transition disabled:opacity-40 shrink-0"
+                  >
+                    {uploading ? (
+                      <RefreshCw size={15} className="animate-spin" />
+                    ) : (
+                      <Paperclip size={15} />
+                    )}
                   </button>
                 )}
                 <div
@@ -690,8 +713,9 @@ export default function InboxPage() {
                     placeholder={
                       isNote
                         ? "เขียน internal note... (ลูกค้าไม่เห็น)"
-                        : pendingMedia ? "เพิ่มข้อความประกอบ (ไม่จำเป็น)..."
-                        : "พิมพ์ข้อความ... (Enter เพื่อส่ง)"
+                        : pendingMedia
+                          ? "เพิ่มข้อความประกอบ (ไม่จำเป็น)..."
+                          : "พิมพ์ข้อความ... (Enter เพื่อส่ง)"
                     }
                     className="w-full bg-transparent px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none"
                   />
