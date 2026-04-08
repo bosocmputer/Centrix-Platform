@@ -133,24 +133,54 @@ export async function conversationRoutes(app: FastifyInstance) {
           lineMessage = { type: 'text', text: translatedContent ?? content }
         }
 
-        // ใช้ Reply API ถ้ายังมี replyToken (< 19 นาที) — ฟรี ไม่หักโควต้า
-        const replyToken = await redis.get(`line:reply_token:${id}`)
-        if (replyToken) {
-          // Reply API — ฟรี
-          await fetch('https://api.line.me/v2/bot/message/reply', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ replyToken, messages: [lineMessage] }),
-          })
-          // ลบ token ทิ้งทันที (ใช้ได้ครั้งเดียว)
-          await redis.del(`line:reply_token:${id}`)
-        } else {
-          // Push API — หักโควต้า (ใช้เมื่อเกิน 19 นาที หรือ token หมดแล้ว)
-          await fetch('https://api.line.me/v2/bot/message/push', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ to: profile.externalId, messages: [lineMessage] }),
-          })
+        // Queue message ใน Redis แล้ว batch ส่งรวมกันภายใน 2 วินาที (สูงสุด 5 balloon)
+        const pendingKey = `line:pending:${id}`
+        const queueLen = await redis.rpush(pendingKey, JSON.stringify(lineMessage))
+        await redis.expire(pendingKey, 60) // safety TTL
+
+        if (queueLen === 1) {
+          // Message แรก — เปิด batch window 2 วินาที
+          const _token = accessToken
+          const _externalId = profile.externalId
+          setTimeout(async () => {
+            try {
+              const raw = await redis.lrange(pendingKey, 0, -1)
+              if (!raw.length) return
+              await redis.del(pendingKey)
+
+              const allMsgs = raw.map((s: string) => JSON.parse(s))
+              const replyToken = await redis.get(`line:reply_token:${id}`)
+
+              // ส่ง batch แรก (สูงสุด 5) — Reply (ฟรี) หรือ Push
+              const firstBatch = allMsgs.slice(0, 5)
+              if (replyToken) {
+                await fetch('https://api.line.me/v2/bot/message/reply', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` },
+                  body: JSON.stringify({ replyToken, messages: firstBatch }),
+                })
+                await redis.del(`line:reply_token:${id}`)
+              } else {
+                await fetch('https://api.line.me/v2/bot/message/push', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` },
+                  body: JSON.stringify({ to: _externalId, messages: firstBatch }),
+                })
+              }
+
+              // ถ้ามีมากกว่า 5 — ส่งที่เหลือผ่าน Push ทีละ batch
+              const overflow = allMsgs.slice(5)
+              for (let i = 0; i < overflow.length; i += 5) {
+                await fetch('https://api.line.me/v2/bot/message/push', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${_token}` },
+                  body: JSON.stringify({ to: _externalId, messages: overflow.slice(i, i + 5) }),
+                })
+              }
+            } catch (err) {
+              console.error('[LINE] batch send error:', err)
+            }
+          }, 2000)
         }
       }
     } else if (channelType === 'FACEBOOK' && accessToken) {
