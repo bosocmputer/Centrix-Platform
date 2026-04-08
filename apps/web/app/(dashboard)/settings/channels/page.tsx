@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '@/lib/api'
-import { Plus, Trash2, Edit2, CheckCircle2, XCircle, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
+import { Plus, Trash2, Edit2, CheckCircle2, XCircle, ToggleLeft, ToggleRight, AlertTriangle, ExternalLink, Info } from 'lucide-react'
 
 const CHANNEL_META: Record<string, { label: string; bg: string; icon: string; fields: { key: string; label: string; placeholder: string }[] }> = {
   FACEBOOK:  { label: 'Facebook Messenger', bg: 'bg-[#1877F2]', icon: 'f', fields: [{ key: 'accessToken', label: 'Page Access Token', placeholder: 'EAAxxxxxxx...' }, { key: 'secret', label: 'Webhook Verify Token', placeholder: 'ค่าที่ใส่ใน Meta → Verify Token (ตั้งเองได้)' }] },
@@ -102,16 +102,39 @@ export default function ChannelsPage() {
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-600 focus:outline-none focus:border-indigo-500/50 transition" />
                 </div>
               ))}
+              {/* Setup Guide */}
               {form.type === 'LINE' && (
-                <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-300">
-                  <AlertTriangle size={14} className="shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold mb-1">LINE OA Free Plan ไม่รองรับการส่งข้อความกลับหาลูกค้า</p>
-                    <p className="text-amber-400/80 leading-relaxed">
-                      การตอบกลับจาก Agent ใช้ <span className="font-medium text-amber-300">Push Message API</span> ซึ่งต้องอัปเกรดเป็นแพ็กเกจเสียเงิน
-                      (Light plan ~880 บาท/เดือน) ก่อนเชื่อมต่อ LINE OA กรุณาตรวจสอบว่าบัญชีของคุณเป็น Paid Plan แล้ว
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300">
+                    <div className="flex items-center gap-1.5 font-semibold mb-2"><Info size={13} /> วิธีเอาค่าจาก LINE Developers</div>
+                    <ol className="flex flex-col gap-1.5 text-indigo-300/80 leading-relaxed list-none">
+                      <li>1. ไปที่ <a href="https://developers.line.biz/console/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-0.5">developers.line.biz/console <ExternalLink size={10}/></a></li>
+                      <li>2. เลือก Provider → เลือก Channel (Messaging API)</li>
+                      <li>3. แท็บ <span className="text-white font-medium">Basic settings</span> → copy <span className="text-white font-medium">Channel secret</span></li>
+                      <li>4. แท็บ <span className="text-white font-medium">Messaging API</span> → กด Issue → copy <span className="text-white font-medium">Channel access token</span></li>
+                      <li>5. ในแท็บเดียวกัน → Webhook URL ใส่: <span className="text-white font-mono bg-white/10 px-1 rounded">https://[tunnel]/api/webhooks/line</span></li>
+                    </ol>
                   </div>
+                  <div className="flex gap-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 text-xs text-amber-300">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">LINE OA Free Plan ไม่รองรับการส่งข้อความกลับหาลูกค้า</p>
+                      <p className="text-amber-400/80 leading-relaxed">ต้องอัปเกรดเป็น Paid Plan (Light ~880 บาท/เดือน) ก่อน ถึงจะใช้ Push Message API ได้</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {form.type === 'FACEBOOK' && (
+                <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-3.5 text-xs text-indigo-300">
+                  <div className="flex items-center gap-1.5 font-semibold mb-2"><Info size={13} /> วิธีเอาค่าจาก Meta Developer</div>
+                  <ol className="flex flex-col gap-1.5 text-indigo-300/80 leading-relaxed list-none">
+                    <li>1. ไปที่ <a href="https://developers.facebook.com/apps/" target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline inline-flex items-center gap-0.5">developers.facebook.com/apps <ExternalLink size={10}/></a> → เลือก App</li>
+                    <li>2. เมนูซ้าย → <span className="text-white font-medium">กรณีการใช้งาน</span> → Messenger → กำหนดค่า</li>
+                    <li>3. <span className="text-white font-medium">Webhook Verify Token</span>: ตั้งค่าเองได้ เช่น <span className="font-mono bg-white/10 px-1 rounded text-white">centrix-verify-2026</span> → ใส่ค่าเดียวกันในช่องด้านบน</li>
+                    <li>4. Webhook URL ใส่: <span className="text-white font-mono bg-white/10 px-1 rounded">https://[tunnel]/api/webhooks/facebook</span></li>
+                    <li>5. <span className="text-white font-medium">Page Access Token</span>: ขั้นตอน 2 → สร้างโทเค็นการเข้าถึง → กด "สร้าง" ข้างชื่อ Page</li>
+                    <li>6. Subscribe Webhook ให้กับ Page → เลือก <span className="text-white font-medium">messages</span></li>
+                  </ol>
                 </div>
               )}
               <div className="flex gap-2 justify-end mt-1">
@@ -155,7 +178,7 @@ export default function ChannelsPage() {
                         {ch.hasAccessToken ? <CheckCircle2 size={10} /> : <XCircle size={10} />} Token
                       </span>
                       <span className={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${ch.hasSecret ? 'text-emerald-400 bg-emerald-400/10' : 'text-red-400 bg-red-400/10'}`}>
-                        {ch.hasSecret ? <CheckCircle2 size={10} /> : <XCircle size={10} />} Secret
+                        {ch.hasSecret ? <CheckCircle2 size={10} /> : <XCircle size={10} />} {ch.type === 'FACEBOOK' ? 'Verify Token' : 'Secret'}
                       </span>
                     </div>
                   </div>
